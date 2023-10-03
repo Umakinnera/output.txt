@@ -1,0 +1,69 @@
+from datetime import datetime, timedelta
+
+# Function to calculate the time difference between two timestamps in hours
+def hours_between(start_time, end_time):
+    time_format = "%Y-%m-%d %H:%M:%S"
+    start = datetime.strptime(start_time, time_format)
+    end = datetime.strptime(end_time, time_format)
+    return (end - start).total_seconds() / 3600
+
+# Function to check if an employee has worked for 7 consecutive days
+def has_worked_consecutive_days(shifts):
+    consecutive_days = 0
+    for i in range(len(shifts) - 1):
+        current_shift_end = shifts[i][1]
+        next_shift_start = shifts[i + 1][0]
+        if hours_between(current_shift_end, next_shift_start) <= 24:
+            consecutive_days += 1
+        else:
+            consecutive_days = 0
+        if consecutive_days == 6:
+            return True
+    return False
+
+# Function to check if an employee has less than 10 hours between shifts but greater than 1 hour
+def has_short_break(shifts):
+    for i in range(len(shifts) - 1):
+        current_shift_end = shifts[i][1]
+        next_shift_start = shifts[i + 1][0]
+        if 1 < hours_between(current_shift_end, next_shift_start) < 10:
+            return True
+    return False
+
+# Function to check if an employee has worked for more than 14 hours in a single shift
+def has_long_shift(shifts):
+    for shift in shifts:
+        shift_start = shift[0]
+        shift_end = shift[1]
+        if hours_between(shift_start, shift_end) > 14:
+            return True
+    return False
+
+# Read the file containing employee records
+filename = "employee_records.txt"
+
+with open(filename, "r") as file:
+    lines = file.readlines()
+
+employee_data = {}
+current_employee = None
+
+# Parse the file and store employee data
+for line in lines:
+    parts = line.strip().split(",")
+    if len(parts) == 3:
+        employee_id, employee_name, position = parts
+        current_employee = (employee_name, position, [])
+        employee_data[employee_id] = current_employee
+    elif len(parts) == 2 and current_employee is not None:
+        start_time, end_time = parts
+        current_employee[2].append((start_time, end_time))
+
+# Iterate over employee data and check conditions
+for employee_id, (employee_name, position, shifts) in employee_data.items():
+    if has_worked_consecutive_days(shifts):
+        print(f"{employee_name} ({position}) has worked for 7 consecutive days.")
+    if has_short_break(shifts):
+        print(f"{employee_name} ({position}) has less than 10 hours between shifts but greater than 1 hour.")
+    if has_long_shift(shifts):
+        print(f"{employee_name} ({position}) has worked for more than 14 hours in a single shift.")
